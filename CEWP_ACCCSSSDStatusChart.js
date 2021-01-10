@@ -16,6 +16,7 @@
 			}
 
 			#chart_loading {
+                display: hide;
 				position: absolute;
 				background: #ffffff;
 				width: 350px;
@@ -211,7 +212,7 @@
                 var currentStatus = [];
 
                 function getProjectsCurrent(){
-
+                    $("#charts_loading").show();
                     //var accumulator;
                     //var url = 'https://usaf.dps.mil/teams/ACCSPC/CSSSPO/_vti_bin/listdata.svc/ACCCSSSDStatus?select=ProjectName,FY,Status&$orderby=Status&$filter=FY eq ' + v.currentFY;
                     var url = 'https://usaf.dps.mil/teams/ACCSPC/CSSSPO/_vti_bin/listdata.svc/ACCCSSSDStatus';
@@ -219,6 +220,7 @@
                         url: url,
                         method: "GET",
                         headers: { "Accept": "application/json; odata=verbose" },
+                        async: false,
                         success: function ( data ){
                             var results = data.d.results;
                             console.log("results: ",results);
@@ -226,7 +228,7 @@
                             var projectdata = j;
                             console.log("projectdata: ",projectdata);
 
-                            for ( i = 0; i < projectdata.length; i++ ) {
+                            for ( var i = 0; i < projectdata.length; i++ ) {
                                 var sd = projectdata[i].StartDate;                               
                                 if ( sd !== null &&  projectdata[i].StartDate !== '') {
                                     sd = "NA";
@@ -242,7 +244,7 @@
                                 } 
                                 var pdata;
                                 pdata = {
-                                    project: projectdata[i].ProjectName,
+                                    project: projectdata[i].Title,
                                     status: projectdata[i].Status,
                                     startdate: sd,
                                     completedate: cd,
@@ -255,7 +257,7 @@
                                 var percentdata;
                                 percentdata = {
                                     percentcomplete: projectdata[i].PercentComplete,                                    
-                                    project: projectdata[i].ProjectName,
+                                    project: projectdata[i].Title,
                                     status: projectdata[i].Status,
                                     startdate: sd,
                                     completedate: cd,
@@ -264,17 +266,8 @@
                                 }  
                                 currentPercentComplete.push(percentdata);                                
                             }
-
-                            //accumulator = 0;
-                            //gather the missions numbers and add them for a total value for YTD
-                            // for ( i = 0; i < currentProject.length; i++ ) {
-                            // 	accumulator = currentProject[i];
-                            // 	v.totalProject = v.totalProject + accumulator;
-                            // }
-                            // console.log( "totalProject" + v.currentFY, v.totalProject );
-                            // getAccessionsCurrent();
-                            //DrawChart(currentProjectName, currentPercentComplete, currentStatus);
-
+                            $("#charts_loading").hide();
+                            
                             Highcharts.chart( 'container', {
                                 chart: {
                                     type: 'column'
@@ -332,6 +325,17 @@
                                     pointPlacement: -0.2
                                 }]
                             });
+
+                            //accumulator = 0;
+                            //gather the missions numbers and add them for a total value for YTD
+                            // for ( i = 0; i < currentProject.length; i++ ) {
+                            // 	accumulator = currentProject[i];
+                            // 	v.totalProject = v.totalProject + accumulator;
+                            // }
+                            // console.log( "totalProject" + v.currentFY, v.totalProject );
+                            // getAccessionsCurrent();
+                            //DrawChart(currentProjectName, currentPercentComplete, currentStatus);
+
                         },
                         error: function ( data )
                         {
