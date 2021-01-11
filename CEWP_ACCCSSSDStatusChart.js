@@ -10,11 +10,14 @@
         
         <style type="text/css">
 			#chart, #chart_container {
-				height: 500px;
+				// height: 500px;
 				margin: auto;
 				z-index: 50;
 			}
-
+            #sideNavBox {
+                 display: hide;               
+            }
+                
 			#chart_loading {
                 display: hide;
 				position: absolute;
@@ -157,7 +160,8 @@
                         var siteUrl = _spPageContextInfo.webAbsoluteUrl;
                         
                         // hideElements();
-                
+                        $("#sideNavBox").hide();
+
                         // function hideElements() {
                         // 	var $el = ''; 
                         // 	$("#s4-titlerow").hide();			
@@ -179,41 +183,14 @@
                     })                
                 })
 
-                //var site = null;
-                //var loc: String( window.location );
-                //var waitmsg = null;
-                //var title = null;
-                //var ctx: = null;
-                //var web: = null;
-                //var list = null;
-                //var data = null;
-                //var json: = null;
-                //var listitem = null;
-                // var used = 0;
-                // var remaining: 0;
-                // var pending: 0;
-                // var total = 0;
-                // var user = null;
-                // var userID = null;
-                //var qry = null;
-                //var html =  "";
-                //var currentFY = null;
-                //var previousFY = null;
-                //var totalAccessions = 0;
-                //var totalProject = 0;
-                //var overUnder = 0;
-                var data = null;        
-                var projectnames = null;
-                var statuses = null;
-                //var FY = [];
-                var options = [];
-                var currentProjectName = [];
-                var currentPercentComplete = [];
-                var currentStatus = [];
-
                 function getProjectsCurrent(){
-                    $("#charts_loading").show();
+                    $("#chart_loading").show();
                     //var accumulator;
+                    var data = null;                      
+                    var currentProjectName = [];
+                    var currentPercentComplete = [];
+                    var currentStatus = [];
+                    //var FY = [];
                     //var url = 'https://usaf.dps.mil/teams/ACCSPC/CSSSPO/_vti_bin/listdata.svc/ACCCSSSDStatus?select=ProjectName,FY,Status&$orderby=Status&$filter=FY eq ' + v.currentFY;
                     var url = 'https://usaf.dps.mil/teams/ACCSPC/CSSSPO/_vti_bin/listdata.svc/ACCCSSSDStatus';
                     $.ajax( {
@@ -227,38 +204,49 @@
                             var j = jQuery.parseJSON( JSON.stringify( results ) );
                             var projectdata = j;
                             console.log("projectdata: ",projectdata);
-
+                            var pcomp =[];
+                            var pname = [];
+                            var pstat = [];
+                            var statnames = {'Not Started': '','Planning': '','In Progress': '','Review': '', 'In-Revision': '','Complete': '', 'On Hold': ''};
+                            var sdates =[];
                             for ( var i = 0; i < projectdata.length; i++ ) {
                                 var sd = projectdata[i].StartDate;                               
-                                if ( sd !== null &&  projectdata[i].StartDate !== '') {
-                                    sd = "NA";
+                                if ( sd == null ||  projectdata[i].StartDate == '') {
+                                    sd = 0;
                                 } else {
-                                    sd = (new Date(cd)).toISOString(); 
-                                }   
+                                    sd = sd.toISOString()
+                                }  
 
                                 var cd = projectdata[i].CompleteDate;
                                 if ( cd !== null &&  projectdata[i].CompleteDate !== '') {
                                     cd = "NA";
                                 } else {
-                                    cd = (new Date(cd)).toISOString(); 
+                                    cd = cd.toISOString()
                                 } 
-                                var pdata;
-                                pdata = {
+                                var statname = projectdata[i].StatusValue;
+                                var pdata = {
                                     project: projectdata[i].Title,
-                                    status: projectdata[i].Status,
+                                    status: statname,
                                     startdate: sd,
                                     completedate: cd,
                                     comments: projectdata[i].Comments,
                                     fy: projectdata[i].FY,
                                     percentcomplete: projectdata[i].PercentComplete
                                 }
+                                pcomp.push(projectdata[i].PercentComplete);
+                                pname.push(projectdata[i].Title);
+                                sdates.push(sd);
+
+                                for ( var kk = 0; kk < statnames.length; kk++ ){
+                                    if (statnames[kk] === statname) statnames[kk] = statnames[kk] + projectdata[i].Title  + ", "
+                                }
+                                pstat.push(statname);
                                 currentProjectName.push(pdata);
 
-                                var percentdata;
-                                percentdata = {
+                                var percentdata = {
                                     percentcomplete: projectdata[i].PercentComplete,                                    
                                     project: projectdata[i].Title,
-                                    status: projectdata[i].Status,
+                                    status: statname,
                                     startdate: sd,
                                     completedate: cd,
                                     comments: projectdata[i].Comments,
@@ -266,26 +254,21 @@
                                 }  
                                 currentPercentComplete.push(percentdata);                                
                             }
-                            $("#charts_loading").hide();
-                            
+                            $("#chart_loading").hide();
+                            console.log("currentPercentComplete: ",currentPercentComplete );
+                            console.log("currentProjectName: ",currentProjectName );
+                            console.log("pstat: ",pstat );
+                            console.log("pName: ",pname );
+                            console.log("sdates ",sdates);                        
                             Highcharts.chart( 'container', {
                                 chart: {
                                     type: 'column'
                                 },
                                 title: {
-                                    //text: "ACC CSS SD projects by Fiscal Year 20" + v.currentFY
-                                    text: "ACC CSS SD projects by Status"
+                                    text: "ACC CSS SD projects by Per Cent Complete"
                                 },
                                 xAxis: {
-                                    status: [
-                                        'Not Started',
-                                        'Planning',
-                                        'In Progress',
-                                        'Review',
-                                        'In-Revision',
-                                        'Complete',
-                                        'On Hold',
-                                    ]
+                                    categories: pname
                                 },
                                 yAxis: [{
                                     min: 0,
@@ -294,7 +277,7 @@
                                     }
                                 }, {
                                     title: {
-                                        text: 'Project'
+                                        text: 'Project Start Date'
                                     },
                                     opposite: true
                                 }],
@@ -314,16 +297,42 @@
                                 series: [{
                                     name: 'Percent Complete',
                                     color: 'rgba(243, 117, 43,1)',
-                                    data: currentPercentComplete,
+                                    data: pcomp,
                                     pointPadding: 0.3,
                                     pointPlacement: -0.2
                                 }, {
-                                    name: 'Project',
+                                    name: 'Start Date',
                                     color: 'rgba(39, 126, 39,.9)',
-                                    data: currentProjectName,
+                                    data: sdates,
                                     pointPadding: 0.4,
                                     pointPlacement: -0.2
-                                }]
+                                }, 
+                                {
+								    type: 'column',
+                                    name: 'Status',
+                                    composition: statnames,
+								    color: 'rgba(248,161,63,1)',
+								    data: pstat,
+								    tooltip: {
+
+								    },
+								    pointPadding: 0.3,
+								    pointPlacement: 0.2,
+								    yAxis: 1
+								}, 
+                                // {
+								//     name: 'Profit Optimized',
+								//     color: 'rgba(186,60,61,.9)',
+								//     data: [203.6, 198.8, 208.5],
+								//     tooltip: {
+								//       valuePrefix: '$',
+								//       valueSuffix: ' M'
+								//     },
+								//     pointPadding: 0.4,
+								//     pointPlacement: 0.2,
+								//     yAxis: 1
+                                // }
+                                ]
                             });
 
                             //accumulator = 0;
@@ -343,16 +352,7 @@
                         }
                     });
                     
-                    // function DrawChart(currentProjectName, currentPercentComplete, currentStatus){
-                    //     Highcharts.chart( 'container', {
-                    //         chart: {
-                    //             type: 'column'
-                    //         },
-                    //         title: {
-                    //             //text: "ACC CSS SD projects by Fiscal Year 20" + v.currentFY
-                    //             text: "ACC CSS SD projects by Status"
-                    //         },
-                    //         xAxis: {
+
                     //             status: [
                     //                 'Not Started'
                     //                 'Planning'
@@ -363,44 +363,7 @@
                     //                 'On Hold'
                     //             ]
                     //         },
-                    //         yAxis: [{
-                    //             min: 0,
-                    //             title: {
-                    //                 text: 'Percent Complete'
-                    //             }
-                    //         }, {
-                    //             title: {
-                    //                 text: 'Project'
-                    //             },
-                    //             opposite: true
-                    //         }],
-                    //         legend: {
-                    //             shadow: false
-                    //         },
-                    //         tooltip: {
-                    //             shared: true
-                    //         },
-                    //         plotOptions: {
-                    //             column: {
-                    //                 grouping: false,
-                    //                 shadow: false,
-                    //                 borderWidth: 0
-                    //             }
-                    //         },
-                    //         series: [{
-                    //             name: 'Percent Complete',
-                    //             color: 'rgba(243, 117, 43,1)',
-                    //             data: currentPercentComplete,
-                    //             pointPadding: 0.3,
-                    //             pointPlacement: -0.2
-                    //         }, {
-                    //             name: 'Project',
-                    //             color: 'rgba(39, 126, 39,.9)',
-                    //             data: currentProjectName,
-                    //             pointPadding: 0.4,
-                    //             pointPlacement: -0.2
-                    //         }]
-                    //     } );
+ 
                     //     //updateYTD();
                     //}                            
                 
@@ -548,7 +511,10 @@
             </div>
             <div id="chart_container"></div>
             <figure class="highcharts-figure">
-                <div id="container"></div>
+                <p class="highcharts-description">
+                    1. Not Started 2. Planning 3. In Progress 4. Review 5. In-Revision 6.Complete 7. On Hold
+                </p>
+                <div id="container"></div>                    
             </figure>
         </div>
     </body>
